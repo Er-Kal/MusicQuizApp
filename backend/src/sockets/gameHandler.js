@@ -1,19 +1,17 @@
 
 import { getCurrentTracks } from '../controllers/playlistController.js';
 import { downloadCurrentSong } from '../services/songService.js';
-import Fuse from 'fuse.js';
+import Leventshtein from 'fast-levenshtein';
 
 let currentTracks = [];
 let playlistName = "";
 let artistName = "";
 let trackName = "";
-const fuseOptions = {
-    includeScore: true,
-    threshold: 0.5
-}
+let roundStart = null;
 
 // Function that waits for a delay
 const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const cleanString = (str) => str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 
 export default (io, socket, lobbyState) => {
 
@@ -32,14 +30,17 @@ export default (io, socket, lobbyState) => {
     async function runGameLoop(){
         console.log(1);
         if (lobbyState.roundNumber>lobbyState.maxRounds){
-            lobbyState.currentStatus = "GAME_OVER";
+        lobbyState.currentStatus = "GAME_OVER";
             io.emit("lobby_update",lobbyState);
             return;
         }
         console.log(2);
         if (currentTracks.length === 0) return;
         console.log(3);
-        
+        for (const player of Object.keys(lobbyState.players)){
+            lobbyState.players[player].guessedSong=false;
+            lobbyState.players[player].guessedArtist=false;
+        }
         lobbyState.currentStatus = "INTERMISSION";
         io.emit('lobby_update', lobbyState);
         
@@ -52,6 +53,7 @@ export default (io, socket, lobbyState) => {
         const audioBuffer = await downloadCurrentSong(songLookUpName)
 
         await delay(5000);
+        roundStart = Date.now();
         
         io.emit('AUDIO_BUFFER',audioBuffer);
 
@@ -70,6 +72,9 @@ export default (io, socket, lobbyState) => {
         console.log("started");
         if (lobbyState.currentStatus !== "WAITING") return;
         console.log("started 2");
+        for (const player of Object.keys(lobbyState.players)){
+            lobbyState.players[socket.username].score=0;
+        }
         
         currentTracks = getCurrentTracks();
 
@@ -81,16 +86,35 @@ export default (io, socket, lobbyState) => {
     })
 
     socket.on('guess', (guess) => {
-        const answers = [artistName, trackName];
+        console.log(`Guess received: ${guess}`);
+ 
+        const cleanGuess = cleanString(guess);
+        const cleanArtist = cleanString(artistName);
+        const cleanTrack = cleanString(trackName);
 
-        const fuse = new Fuse(answers, fuseOptions);
-        
-        const result = fuse.search(guess);
+        const artistDistance = Leventshtein.get(cleanGuess, cleanArtist);
+        const trackDistance = Leventshtein.get(cleanGuess, cleanTrack);
 
-        console.log(`Fuse result ${result}`);
-        if (result.length>0){
-            console.log("Close guess");
+        const maxArtistTypos = Math.ceil(cleanArtist.length * 0.2); // Allow 20% of the length of the artist name as typos
+        const maxTrackTypos = Math.ceil(cleanTrack.length * 0.2); // Allow 20% of the length of the track name as typos
+
+        console.log(`Artist distance: ${artistDistance} Max allowed: ${maxArtistTypos}`);
+        console.log(`Track distance: ${trackDistance} Max allowed: ${maxTrackTypos}`);
+        if (!lobbyState.players[socket.username].guessedArtist && artistDistance <= maxArtistTypos) {
+            lobbyState.players[socket.username].guessedArtist = true;
+            console.log(`${socket.username} guessed the artist correctly!`);
+            const timeTaken = (Date.now() - roundStart) / 1000; // Time taken in seconds
+            const score = Math.max(0, 100 - timeTaken); // Score decreases with time, minimum score is 0
+            lobbyState.players[socket.username].score += score;
         }
+        if (!lobbyState.players[socket.username].guessedSong && trackDistance <= maxTrackTypos) {
+            lobbyState.players[socket.username].guessedSong = true;
+            console.log(`${socket.username} guessed the song correctly!`);
+            const timeTaken = (Date.now() - roundStart) / 1000; // Time taken in seconds
+            const score = Math.max(0, 100 - timeTaken); // Score decreases with time, minimum score is 0
+            lobbyState.players[socket.username].score += score;
+        }
+        io.emit('lobby_update', lobbyState);
     });
 
     return;

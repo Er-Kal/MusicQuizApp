@@ -92,7 +92,14 @@ export const SocketProvider = ({ children }) => {
         console.log("started")
     }
 
-    return <SocketContext.Provider value={{ socket, lobby, isConnected, joinLobby, startGame }}>
+    const submitGuess = (guess) => {
+        if (!socket) return;
+        if (lobby.currentStatus !== "GUESSING") return;
+
+       socket.emit('guess', guess);
+    }
+
+    return <SocketContext.Provider value={{ socket, lobby, isConnected, joinLobby, startGame, submitGuess }}>
         {children}
     </SocketContext.Provider>
 }

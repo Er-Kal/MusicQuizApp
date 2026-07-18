@@ -4,9 +4,10 @@ import JoinForm from "./JoinForm.jsx";
 import HostForm from "./HostForm.jsx";
 import PlayerList from "./PlayerList.jsx";
 import Results from "./Results.jsx";
+import Quiz from "./Quiz.jsx";
 
 export default function Home() {
-  const { lobby, joinLobby, startGame, isConnected } = useGameSocket();
+  const { lobby, joinLobby, startGame, submitGuess, isConnected } = useGameSocket();
   const [hasJoined, setHasJoined] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
   const [trackCount, setTrackCount] = useState(0);
@@ -45,9 +46,11 @@ export default function Home() {
         <p>Total tracks loaded {trackCount}</p>
       </div>
 
-      {hasJoined && <PlayerList players={lobby.players} />}
+      {lobby.currentStatus === "WAITING" && hasJoined && <PlayerList players={lobby.players} />}
 
       {lobby.currentStatus === "INTERMISSION" && hasJoined && <Results players={lobby.players}/>}
+
+      {lobby.currentStatus === "GUESSING" && hasJoined && <Quiz submitGuess={submitGuess}/>}
     </div>
   );
 }
