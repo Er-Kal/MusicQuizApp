@@ -1,9 +1,16 @@
 
 import { getCurrentTracks } from '../controllers/playlistController.js';
 import { downloadCurrentSong } from '../services/songService.js';
+import Fuse from 'fuse.js';
 
 let currentTracks = [];
 let playlistName = "";
+let artistName = "";
+let trackName = "";
+const fuseOptions = {
+    includeScore: true,
+    threshold: 0.5
+}
 
 // Function that waits for a delay
 const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -39,8 +46,8 @@ export default (io, socket, lobbyState) => {
         let randomIndex = Math.floor(Math.random()*currentTracks.length);
         let chosenSong = currentTracks[randomIndex];
         currentTracks.splice(randomIndex,randomIndex);
-        const trackName = chosenSong.track.name;
-        const artistName = chosenSong.track.artists[0].name;
+        trackName = chosenSong.track.name;
+        artistName = chosenSong.track.artists[0].name;
         const songLookUpName = `${artistName} - ${trackName}`
         const audioBuffer = await downloadCurrentSong(songLookUpName)
 
@@ -72,6 +79,19 @@ export default (io, socket, lobbyState) => {
         prepareNextRound();
         await runGameLoop();
     })
+
+    socket.on('guess', (guess) => {
+        const answers = [artistName, trackName];
+
+        const fuse = new Fuse(answers, fuseOptions);
+        
+        const result = fuse.search(guess);
+
+        console.log(`Fuse result ${result}`);
+        if (result.length>0){
+            console.log("Close guess");
+        }
+    });
 
     return;
 }

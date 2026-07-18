@@ -18,6 +18,7 @@ export default (io, socket, lobbyState) => {
                 status: 'active',
                 timeoutId: null,
                 is_host: false,
+                score: Math.random()*100%100,
             }
             if (Object.keys(lobbyState.players).length === 1) {
                 lobbyState.players[username].is_host = true;

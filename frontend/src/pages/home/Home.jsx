@@ -3,6 +3,7 @@ import { useGameSocket } from "../../context/SocketContext.jsx";
 import JoinForm from "./JoinForm.jsx";
 import HostForm from "./HostForm.jsx";
 import PlayerList from "./PlayerList.jsx";
+import Results from "./Results.jsx";
 
 export default function Home() {
   const { lobby, joinLobby, startGame, isConnected } = useGameSocket();
@@ -19,7 +20,7 @@ export default function Home() {
     <div>
       <h1> Quiz App </h1>
 
-      {!hasJoined && (
+      {!hasJoined && lobby.currentStatus === "WAITING" && (
         <JoinForm
           setHasJoined={setHasJoined}
           joinLobby={joinLobby}
@@ -30,7 +31,7 @@ export default function Home() {
 
       <p> Your Status: {isConnected ? "Connected" : "Connecting..."}</p>
 
-      {isCurrentUserHost && (
+      {isCurrentUserHost && lobby.currentStatus === "WAITING" && (
         <HostForm
           setPlaylistName={setPlaylistName}
           setTrackCount={setTrackCount}
@@ -45,6 +46,8 @@ export default function Home() {
       </div>
 
       {hasJoined && <PlayerList players={lobby.players} />}
+
+      {lobby.currentStatus === "INTERMISSION" && hasJoined && <Results players={lobby.players}/>}
     </div>
   );
 }
