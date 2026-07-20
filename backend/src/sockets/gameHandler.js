@@ -49,6 +49,8 @@ export default (io, socket, lobbyState) => {
         currentTracks.splice(randomIndex,randomIndex);
         trackName = chosenSong.track.name;
         artistName = chosenSong.track.artists[0].name;
+        lobbyState.artistName = artistName;
+        lobbyState.trackName = trackName;
         const songLookUpName = `${artistName} - ${trackName}`
         const audioBuffer = await downloadCurrentSong(songLookUpName)
 
@@ -79,7 +81,7 @@ export default (io, socket, lobbyState) => {
         currentTracks = getCurrentTracks();
 
         lobbyState.roundNumber = 0;
-        lobbyState.maxRounds = 5;
+        lobbyState.maxRounds = 1;
 
         prepareNextRound();
         await runGameLoop();
@@ -104,18 +106,23 @@ export default (io, socket, lobbyState) => {
             lobbyState.players[socket.username].guessedArtist = true;
             console.log(`${socket.username} guessed the artist correctly!`);
             const timeTaken = (Date.now() - roundStart) / 1000; // Time taken in seconds
-            const score = Math.max(0, 100 - timeTaken); // Score decreases with time, minimum score is 0
+            const score = Math.ceil(Math.max(0, 100 - timeTaken)); // Score decreases with time, minimum score is 0
             lobbyState.players[socket.username].score += score;
         }
         if (!lobbyState.players[socket.username].guessedSong && trackDistance <= maxTrackTypos) {
             lobbyState.players[socket.username].guessedSong = true;
             console.log(`${socket.username} guessed the song correctly!`);
             const timeTaken = (Date.now() - roundStart) / 1000; // Time taken in seconds
-            const score = Math.max(0, 100 - timeTaken); // Score decreases with time, minimum score is 0
+            const score = Math.ceil(Math.max(0, 100 - timeTaken)); // Score decreases with time, minimum score is 0
             lobbyState.players[socket.username].score += score;
         }
         io.emit('lobby_update', lobbyState);
     });
+
+    socket.on('return_lobby', () => {
+        lobbyState.currentStatus="WAITING";
+        io.emit('lobby_update', lobbyState);
+    })
 
     return;
 }

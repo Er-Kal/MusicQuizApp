@@ -1,9 +1,6 @@
 import {
     spawn
 } from 'child_process';
-import {
-    resolve
-} from 'dns';
 
 export const downloadCurrentSong = (songName) => {
     return new Promise((resolve, reject) => {
@@ -13,6 +10,7 @@ export const downloadCurrentSong = (songName) => {
             songQuery,
             '-x',
             '--audio-format', 'mp3',
+            '-f', 'bestaudio/best',
             '-o', '-',
             '--js-runtimes', 'node'
         ]);

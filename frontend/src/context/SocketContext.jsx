@@ -75,14 +75,36 @@ export const SocketProvider = ({ children }) => {
         // Return if there is no socket
         if (!socket) return;
 
-        // Connect the socket, if not connected
-        if (!socket.connected) {
-            socket.connect();
+        localStorage.setItem("username",username);
+
+        if (socket.connected) {
+            socket.emit('join_lobby', username);
+            return;
         }
 
-        // Emit join_lobby event with username as field
-        socket.emit('join_lobby', username);
+        socket.connect();
+
+        socket.once("connect", () => {
+            socket.emit("join_lobby", username);
+        });
     }
+
+    useEffect(() => {
+        if (!socket) return;
+
+        localStorage.getItem("username");
+
+        if (socket.connected) {
+            socket.emit('join_lobby', username);
+            return;
+        }
+
+        socket.connect();
+
+        socket.once("connect", () => {
+            socket.emit("join_lobby", username);
+        });
+    }, [socket])
 
     const startGame = () => {
         if (!socket) return;
@@ -99,7 +121,12 @@ export const SocketProvider = ({ children }) => {
        socket.emit('guess', guess);
     }
 
-    return <SocketContext.Provider value={{ socket, lobby, isConnected, joinLobby, startGame, submitGuess }}>
+    const returnLobby = () => {
+        if (!socket) return;
+        socket.emit('return_lobby');
+    }
+
+    return <SocketContext.Provider value={{ socket, lobby, isConnected, returnLobby, joinLobby, startGame, submitGuess }}>
         {children}
     </SocketContext.Provider>
 }
