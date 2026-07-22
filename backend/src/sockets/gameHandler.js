@@ -81,7 +81,6 @@ export default (io, socket, lobbyState) => {
         currentTracks = getCurrentTracks();
 
         lobbyState.roundNumber = 0;
-        lobbyState.maxRounds = 1;
 
         prepareNextRound();
         await runGameLoop();

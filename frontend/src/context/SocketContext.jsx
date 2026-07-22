@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 const SocketContext = createContext(null);
 
 // Express URL
-const SOCKET_URL = 'http://localhost:3031';
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:3031";
 
 export const SocketProvider = ({ children }) => {
     // States

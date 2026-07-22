@@ -16,6 +16,7 @@ dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 app.use("/api/game", gameRoutes);
 
 const server = http.createServer(app);
