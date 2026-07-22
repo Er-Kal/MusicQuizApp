@@ -12,7 +12,6 @@ export const downloadCurrentSong = (songName) => {
             '--audio-format', 'mp3',
             '-f', 'bestaudio/best',
             '-o', '-',
-            '--js-runtimes', 'node'
         ]);
 
         let chunks = [];

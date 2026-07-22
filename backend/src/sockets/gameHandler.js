@@ -52,7 +52,17 @@ export default (io, socket, lobbyState) => {
         lobbyState.artistName = artistName;
         lobbyState.trackName = trackName;
         const songLookUpName = `${artistName} - ${trackName}`
-        const audioBuffer = await downloadCurrentSong(songLookUpName)
+        
+        let audioBuffer;
+        try {
+            audioBuffer = await downloadCurrentSong(songLookUpName)
+        } catch (error) {
+            console.error('Failed to download song:', error);
+            io.emit('error', { message: 'Failed to download song. Skipping to next round.' });
+            prepareNextRound();
+            runGameLoop();
+            return;
+        }
 
         await delay(5000);
         roundStart = Date.now();
