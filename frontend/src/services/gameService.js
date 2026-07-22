@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3031/api/game';
+const API_BASE_URL = import.meta.env.VITE_API_URL + "/api/game"; //'http://localhost:3031/api/game';
 
 export const submitPlaylistApi = async (playlistInput) => {
     try{
